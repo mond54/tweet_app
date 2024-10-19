@@ -25,6 +25,6 @@ class SampleJob implements ShouldQueue
      */
     public function handle(): void
     {
-        echo 'Jobを実行しました。';
+        echo 'Jobjob';
     }
 }
