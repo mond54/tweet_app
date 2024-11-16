@@ -5,7 +5,7 @@ on:
   pull_request:
 
 env:
-  DB_USERNAME: root
+  DB_USERNAME: sail
   DB_PASSWORD: password
   MAIL_FROM_ADDRESS: info@example.com
 
@@ -42,6 +42,9 @@ jobs:
        - name: Install Dependencies
          if: steps.cache.outputs.cache-hit != 'true'
          run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+       - name: Configure Database Permissions
+         run: |
+          mysql -uroot -ppassword -e "GRANT ALL ON *.* TO 'sail'@'%'; FLUSH PRIVILEGES;"
        - name: Generate key
          run: php artisan key:generate --env testing
        - name: Set hostname
