@@ -51,7 +51,7 @@ jobs:
 
        - name: Configure Database Permissions
          run: |
-           mysql -h mysql.test -uroot -proot_password -e "CREATE USER IF NOT EXISTS 'sail'@'%' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON . TO 'sail'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+           mysql -h mysql.test -uroot -proot_password -e "CREATE USER IF NOT EXISTS 'sail'@'%' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON *.* TO 'sail'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
        - name: Generate Application Key
          run: php artisan key:generate --env=testing
