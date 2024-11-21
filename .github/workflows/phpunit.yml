@@ -11,7 +11,6 @@ env:
 
 jobs:
    phpunit:
-
      runs-on: ubuntu-latest
 
      services:
@@ -20,34 +19,45 @@ jobs:
          ports:
            - 3306:3306
          env:
-           MYSQL_DATABASE: ${{ env.DB_DATABASE}}
+           MYSQL_ROOT_PASSWORD: root_password
+           MYSQL_DATABASE: ${{ env.DB_DATABASE }}
            MYSQL_USER: ${{ env.DB_USERNAME }}
            MYSQL_PASSWORD: ${{ env.DB_PASSWORD }}
-           MYSQL_ALLOW_EMPTY_PASSWORD: 1
+           MYSQL_ROOT_HOST: '%'
          options: >-
-           --health-cmd "mysqladmin ping"
-           --health-interval 10s
-           --health-timeout 5s
-           --health-retries 5
+           --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+           --health-interval=10s
+           --health-timeout=5s
+           --health-retries=5
 
      steps:
-       - uses: actions/checkout@v2
+       - name: Checkout Code
+         uses: actions/checkout@v2
+
        - name: Setup PHP
          uses: shivammathur/setup-php@v2
          with:
            php-version: '8.1'
            tools: composer:v2
-       - name: Copy .env
+
+       - name: Copy .env for Testing
          run: cp .env.example .env.testing
+
        - name: Install Dependencies
-         if: steps.cache.outputs.cache-hit != 'true'
          run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+       - name: Set Hostname for MySQL
+         run: echo "127.0.0.1 mysql.test" | sudo tee -a /etc/hosts
+
        - name: Configure Database Permissions
          run: |
-          mysql -uroot -ppassword -e "GRANT ALL ON *.* TO 'sail'@'%'; FLUSH PRIVILEGES;"
-       - name: Generate key
-         run: php artisan key:generate --env testing
-       - name: Set hostname
-         run: sudo echo "127.0.0.1 mysql.test" | sudo tee -a /etc/hosts
-       - name: Execute tests (Unit and Feature tests) via PHPUnit
+           mysql -h mysql.test -uroot -proot_password -e "CREATE USER IF NOT EXISTS 'sail'@'%' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON . TO 'sail'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+
+       - name: Generate Application Key
+         run: php artisan key:generate --env=testing
+
+       - name: Run Migrations
+         run: php artisan migrate --env=testing --force
+
+       - name: Execute Tests
          run: vendor/bin/phpunit
